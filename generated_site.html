@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Retro Arcade</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #333;
+			font-family: Arial, sans-serif;
+			font-size: 16px;
+			color: #FFFFFF;
+			text-shadow: 0px 2px 2px rgba(255, 255, 255, 0.5);
+		}
+		@media (min-width: 769px) {
+			body {
+				background-image: linear-gradient(to bottom, #FF69B4, #33CCFF);
+				background-size: 100% 100%;
+				background-position: 0% 100%;
+				background-repeat: no-repeat;
+				animation: gradient-move 5s infinite;
+			}
+			@keyframes gradient-move {
+				0% {
+					background-position: 0% 100%;
+				}
+				100% {
+					background-position: 100% 100%;
+				}
+			}
+		}
+		.container {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			height: 100vh;
+			width: 100vw;
+			margin: 0 auto;
+		}
+		.title {
+			font-size: 64px;
+			font-weight: bold;
+			color: #FF69B4;
+			text-shadow: 2px 2px #33CCFF;
+			margin-bottom: 20px;
+			margin-top: 20px;
+		}
+		.high-score {
+			background-color: #33CCFF;
+			border-radius: 10px;
+			box-shadow: 0 0 10px #33CCFF;
+			padding: 20px;
+			margin-bottom: 20px;
+			margin-top: 20px;
+			max-width: 300px;
+			margin: 0 auto;
+		}
+		.high-score h2 {
+			font-size: 24px;
+			font-weight: bold;
+			margin-bottom: 10px;
+		}
+		.high-score ul {
+			list-style: none;
+			padding: 0;
+			margin: 0;
+		}
+		.high-score ul li {
+			padding: 10px;
+			border-bottom: 1px solid #33CCFF;
+		}
+		.high-score ul li:last-child {
+			border-bottom: none;
+		}
+		.high-score a {
+			text-decoration: none;
+			color: #FF69B4;
+		}
+		.high-score a:hover {
+			color: #33CCFF;
+		}
+		@media (max-width: 768px) {
+			.container {
+				flex-direction: column;
+				align-items: center;
+				margin-top: 20px;
+			}
+			.title {
+				font-size: 32px;
+				margin-top: 10px;
+			}
+			.high-score {
+				width: 80%;
+				margin: 20px auto;
+				margin-top: 10px;
+			}
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<h1 class="title">GLOWING ARCADE</h1>
+		<div class="high-score">
+			<h2>High Score Table</h2>
+			<ul>
+				<li>John - 1000</li>
+				<li>Jane - 800</li>
+				<li>Peter - 900</li>
+			</ul>
+			<a href="#" target="_blank">View All Scores</a>
+		</div>
+	</div>
+	<script>
+		// Add JavaScript code to dynamically update the high score table or add interactivity to the landing page
+	</script>
+</body>
+</html>
