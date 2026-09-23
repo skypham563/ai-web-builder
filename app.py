@@ -11,7 +11,7 @@ import re
 import json
 import requests
 import hashlib
-from duckduckgo_search import DDGS
+from ddgs import DDGS
 
 # --- Voice-to-Code Plugin Attempt ---
 try:
