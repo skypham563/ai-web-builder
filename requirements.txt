@@ -1,2 +1,2 @@
 openai
-ddgs
+import DDGS
