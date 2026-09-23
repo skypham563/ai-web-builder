@@ -1,2 +1,2 @@
-OpenAI
+openai
 DDGS
