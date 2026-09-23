@@ -1,2 +1,2 @@
-openai
+OpenAI and DuckDuckGo
 DDGS
