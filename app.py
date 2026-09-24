@@ -33,13 +33,25 @@ st.markdown("Describe the website you want to build. The AI will write the code 
 if "generated_html" not in st.session_state:
     st.session_state.generated_html = ""
 
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        # If it's the AI, don't flood the screen with raw HTML code
+        if msg["role"] == "assistant":
+            st.write("✅ Code generated & applied!")
+        else:
+            st.write(msg["content"])
+
 prompt = st.chat_input(f"E.g., Build a dark-mode landing page for a {template}...")
 
 if prompt:
     if not api_key:
         st.error("Please enter your OpenAI API Key in the sidebar.")
     else:
-        # Display the user's prompt
+        # 1. Add user prompt to memory and display it
+        st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.write(prompt)
             
@@ -48,28 +60,33 @@ if prompt:
                 try:
                     client = openai.OpenAI(api_key=api_key)
                     
+                    # 2. Update system prompt to handle iterative edits
                     system_prompt = f"""You are an expert frontend web developer. 
                     Create a beautiful, modern, mobile-responsive HTML webpage for a {template}. 
                     CRITICAL: You MUST include all HTML, CSS (use Tailwind via CDN), and JavaScript in a SINGLE file.
-                    Output ONLY the raw HTML code inside a ```html codeblock. Do not add explanations."""
+                    Output ONLY the raw HTML code inside a ```html codeblock. Do not add explanations.
+                    If the user asks for a modification to the existing code, output the ENTIRE updated HTML file."""
+                    
+                    # 3. Combine system prompt with the full conversation history
+                    api_messages = [{"role": "system", "content": system_prompt}] + st.session_state.messages
                     
                     response = client.chat.completions.create(
-                        model="gpt-4o-mini", # Using the fast/cheap model for speed
-                        messages=[
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": prompt}
-                        ],
+                        model="gpt-4o-mini",
+                        messages=api_messages,
                         temperature=0.7
                     )
                     
                     raw_output = response.choices[0].message.content
                     
-                    # We use regex to find code between ```html and ```
+                    # 4. Save the AI's response to memory and show success message
+                    st.session_state.messages.append({"role": "assistant", "content": raw_output})
+                    st.write("✅ Code generated & applied!")
+                    
+                    # 5. Extract the HTML for the preview
                     html_match = re.search(r"```html\n(.*?)\n```", raw_output, re.DOTALL)
                     if html_match:
                         st.session_state.generated_html = html_match.group(1)
                     else:
-                        # Fallback if the AI forgets the formatting
                         st.session_state.generated_html = raw_output
                         
                 except Exception as e:
