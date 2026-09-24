@@ -2,27 +2,79 @@ import streamlit as st
 import openai
 import re
 import streamlit.components.v1 as components
+import sqlite3
+import hashlib
 
 st.set_page_config(page_title="AI Web Builder Pro", page_icon="🚀", layout="wide")
 
-def check_password():
-    """Returns True if the user enters the correct password."""
-    if "password_correct" not in st.session_state:
-        st.session_state["password_correct"] = False
+def init_db():
+    """Create the user database if it doesn't exist."""
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            email TEXT PRIMARY KEY,
+            password_hash TEXT,
+            credits INTEGER
+        )
+    ''')
+    conn.commit()
+    conn.close()
 
-    if not st.session_state["password_correct"]:
-        st.title("🔒 Private Access")
-        st.markdown("Please enter the password to access the AI Web Builder.")
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+init_db()
+
+def check_password():
+    """Handles user login and registration."""
+    if "logged_in" not in st.session_state:
+        st.session_state.logged_in = False
+
+    if not st.session_state.logged_in:
+        st.title("🚀 Welcome to AI Web Builder Pro")
+        st.markdown("Please log in or create an account to start building.")
         
-        password = st.text_input("Password", type="password")
+        tab1, tab2 = st.tabs(["🔒 Sign In", "✨ Create Account"])
         
-        if st.button("Login"):
-            # You can change "sky2024" to whatever password you want!
-            if password == "sky2024": 
-                st.session_state["password_correct"] = True
-                st.rerun()
-            else:
-                st.error("😕 Incorrect password. Please try again.")
+        with tab1:
+            login_email = st.text_input("Email", key="login_email")
+            login_password = st.text_input("Password", type="password", key="login_password")
+            if st.button("Log In", type="primary"):
+                conn = sqlite3.connect('users.db')
+                c = conn.cursor()
+                c.execute('SELECT * FROM users WHERE email=? AND password_hash=?', 
+                          (login_email.lower(), hash_password(login_password)))
+                user = c.fetchone()
+                conn.close()
+                
+                if user:
+                    st.session_state.logged_in = True
+                    st.session_state.user_email = user[0]
+                    st.session_state.user_credits = user[2]
+                    st.rerun()
+                else:
+                    st.error("😕 Incorrect email or password.")
+                    
+        with tab2:
+            reg_email = st.text_input("Email", key="reg_email")
+            reg_password = st.text_input("Password", type="password", key="reg_password")
+            if st.button("Create Account"):
+                if reg_email and reg_password:
+                    conn = sqlite3.connect('users.db')
+                    c = conn.cursor()
+                    try:
+                        # Give new users 5 free generation credits
+                        c.execute('INSERT INTO users (email, password_hash, credits) VALUES (?, ?, ?)', 
+                                  (reg_email.lower(), hash_password(reg_password), 5))
+                        conn.commit()
+                        st.success("✅ Account created! You have 5 free credits. Please Sign In.")
+                    except sqlite3.IntegrityError:
+                        st.error("⚠️ An account with that email already exists.")
+                    finally:
+                        conn.close()
+                else:
+                    st.warning("Please fill in both fields.")
         return False
     return True
 
@@ -31,6 +83,12 @@ if not check_password():
     st.stop()
 
 with st.sidebar:
+    st.markdown(f"👤 **Logged in as:** {st.session_state.user_email}")
+    st.markdown(f"🪙 **Credits Remaining:** {st.session_state.user_credits}")
+    if st.button("Log Out"):
+        st.session_state.logged_in = False
+        st.rerun()
+        
     st.title("⚙️ Builder Settings")
     st.divider()
     
@@ -78,7 +136,20 @@ prompt = st.chat_input(f"E.g., Build a dark-mode landing page for a {template}..
 if prompt:
     if not api_key:
         st.error("Please enter your OpenAI API Key in the sidebar.")
+    elif st.session_state.user_credits <= 0:
+        st.error("💳 You are out of credits! Please upgrade your plan to generate more websites.")
     else:
+        # Deduct a credit from the database
+        conn = sqlite3.connect('users.db')
+        c = conn.cursor()
+        c.execute('UPDATE users SET credits = credits - 1 WHERE email = ?', (st.session_state.user_email,))
+        conn.commit()
+        
+        # Fetch updated credits to show on screen
+        c.execute('SELECT credits FROM users WHERE email = ?', (st.session_state.user_email,))
+        st.session_state.user_credits = c.fetchone()[0]
+        conn.close()
+        
         # Initialize OpenAI Client once for both images and text
         client = openai.OpenAI(api_key=api_key)
         
